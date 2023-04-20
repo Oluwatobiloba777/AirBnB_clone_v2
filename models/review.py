@@ -9,7 +9,7 @@ from sqlalchemy.orm import relationship
 
 
 class Review(BaseModel, Base):
-    """Represents a review for a MySQL database.
+    """Represent a review for a MySQL database.
 
     Inherits from SQLAlchemy Base and links to the MySQL table reviews.
 

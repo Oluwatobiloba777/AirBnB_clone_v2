@@ -1,12 +1,10 @@
 #!/usr/bin/python3
 """Defines the BaseModel class."""
 import models
-from uuid import uuid4
+import uuid
 from datetime import datetime
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column
-from sqlalchemy import DateTime
-from sqlalchemy import String
+from sqlalchemy import Column, DateTime, String
 
 Base = declarative_base()
 
@@ -31,14 +29,23 @@ class BaseModel:
             *args (any): Unused.
             **kwargs (dict): Key/value pairs of attributes.
         """
-        self.id = str(uuid4())
-        self.created_at = self.updated_at = datetime.utcnow()
-        if kwargs:
+        if not kwargs:
+            self.id = str(uuid.uuid4())
+            self.created_at = datetime.now()
+            self.updated_at = datetime.now()
+        else:
             for key, value in kwargs.items():
                 if key == "created_at" or key == "updated_at":
                     value = datetime.strptime(value, "%Y-%m-%dT%H:%M:%S.%f")
                 if key != "__class__":
                     setattr(self, key, value)
+            if "created_at" not in kwargs:
+                self.created_at = datetime.now()
+            if "updated_at" not in kwargs:
+                self.updated_at = datetime.now()
+            if "id" not in kwargs:
+                self.id = str(uuid.uuid4())
+
 
     def save(self):
         """Update updated_at with the current datetime."""

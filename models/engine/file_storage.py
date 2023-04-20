@@ -22,39 +22,44 @@ class FileStorage:
     __objects = {}
 
     def all(self, cls=None):
-        """Return a dictionary of instantiated objects in __objects.
+        """Return a dictionary of instantiated objects in storage.
 
         If a cls is specified, returns a dictionary of objects of that type.
         Otherwise, returns the __objects dictionary.
         """
-        if cls is not None:
-            if type(cls) == str:
-                cls = eval(cls)
-            cls_dict = {}
-            for k, v in self.__objects.items():
-                if type(v) == cls:
-                    cls_dict[k] = v
-            return cls_dict
-        return self.__objects
+        model_dict = {}
+        if cls:
+            for key in FileStorage.__objects.keys():
+                if key.split('.')[0] == cls.__name__:
+                    model_dict[key] = FileStorage.__objects[key]
+            return model_dict
+        return FileStorage.__objects
 
     def new(self, obj):
         """Set in __objects obj with key <obj_class_name>.id."""
-        self.__objects["{}.{}".format(type(obj).__name__, obj.id)] = obj
+        self.all().update({obj.to_dict()['__class__'] + '.' + obj.id: obj})
 
     def save(self):
         """Serialize __objects to the JSON file __file_path."""
-        odict = {o: self.__objects[o].to_dict() for o in self.__objects.keys()}
         with open(self.__file_path, "w", encoding="utf-8") as f:
+            odict = {}
+            odict.update(FileStorage.__objects)
+            for key, value in odict.items():
+                odict[key] = value.to_dict()
             json.dump(odict, f)
 
     def reload(self):
-        """Deserialize the JSON file __file_path to __objects, if it exists."""
+        """ it loads storage from file"""
+
+        model_classes = {
+            'BaseModel': BaseModel, 'Amenity': Amenity, 'City': City, 'Place': Place,
+            'Review': Review, 'State': State, 'User': User
+        }
         try:
             with open(self.__file_path, "r", encoding="utf-8") as f:
-                for o in json.load(f).values():
-                    name = o["__class__"]
-                    del o["__class__"]
-                    self.new(eval(name)(**o))
+                load_file = json.load(f)
+                for key, value in load_file.items():
+                    self.all()[key] = model_classes[value['__class__']](**value)
         except FileNotFoundError:
             pass
 
